@@ -8,9 +8,22 @@ import type { UsageInfo } from '../services/types.js';
 
 export const usageTools = {
     check_usage: {
-        description: 'Check API usage and remaining credits for search services. Tavily and Exa support API-based usage tracking. For Brave, dashboard URL is provided.',
+        description: `Check API usage and remaining credits for configured search services.
+
+**When to use:** Before making many API calls, to check if credits are running low, or when the user asks about remaining API quota.
+**Supported services:**
+- **Tavily:** Returns real-time usage data via API (used credits, remaining credits, reset date).
+- **Brave:** No API for usage — provides a link to the web dashboard.
+- **Exa:** No API for usage — provides a link to the web dashboard.
+- **Semantic Scholar & arXiv:** Free services with no usage limits (only rate limits apply).
+**Returns:** Array of UsageInfo objects with service name, availability status, and usage details.
+
+**Examples:**
+- Check all services: { "service": "all" } or {}
+- Check Tavily only: { "service": "tavily" }
+- Check Brave only: { "service": "brave" }`,
         schema: z.object({
-            service: z.enum(['brave', 'tavily', 'exa', 'all']).optional().describe('Service to check (default: "all")'),
+            service: z.enum(['brave', 'tavily', 'exa', 'all']).optional().describe('Which service to check. "all" (default) checks every configured service. Use a specific service name to check just one. Example: "tavily"'),
         }),
         handler: async (args: any, config: { braveApiKey?: string; tavilyApiKey?: string; exaApiKey?: string }) => {
             const service = args.service ?? 'all';
@@ -69,7 +82,7 @@ export const usageTools = {
                 });
             }
 
-            // Semantic Scholar & arXiv: 무료, 사용량 제한 없음 (rate limit만 있음)
+            // Semantic Scholar & arXiv: 무료, 사용량 제한 없음
             if (service === 'all') {
                 results.push({
                     service: 'semantic_scholar',
