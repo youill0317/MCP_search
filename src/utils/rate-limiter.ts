@@ -18,7 +18,7 @@ const DEFAULT_LIMITS: Record<string, { maxTokens: number; refillRate: number }> 
     brave: { maxTokens: 15, refillRate: 1 },       // 1 req/sec, burst 15
     tavily: { maxTokens: 10, refillRate: 1 },       // 1 req/sec, burst 10
     exa: { maxTokens: 10, refillRate: 1 },          // 1 req/sec, burst 10
-    semantic_scholar: { maxTokens: 10, refillRate: 1 },  // 1 req/sec (no key), 10 req/sec (with key)
+    semantic_scholar: { maxTokens: 1, refillRate: 1 },   // 1 req/sec (strict: no burst allowed)
     arxiv: { maxTokens: 5, refillRate: 0.33 },      // ~1 req/3sec (arXiv is slow)
 };
 
