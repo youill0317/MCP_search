@@ -14,13 +14,15 @@ export const exaTools = {
 **Strengths:** Neural search understands intent (e.g., "how to handle errors in async Python" finds relevant guides even without exact keyword matches), extremely fast, excellent for code and technical content.
 **Returns:** Array of SearchResult objects with title, url, content, source, publishedDate, score, author.
 
+IMPORTANT: Each parameter must contain ONLY its own value. Do NOT combine multiple fields into one parameter.
+
 **Examples:**
 - Technical search: { "query": "best practices for error handling in TypeScript async functions" }
 - Neural (semantic) mode: { "query": "lightweight alternatives to Elasticsearch for small projects", "type": "neural" }
 - With full text: { "query": "implementing JWT authentication in Node.js", "include_text": true, "num_results": 5 }
 - Keyword mode: { "query": "RFC 7519 JWT specification", "type": "keyword" }`,
         schema: z.object({
-            query: z.string().describe('Search query. Exa understands natural language well, so descriptive queries work great. Example: "Python libraries for processing large CSV files efficiently"'),
+            query: z.string().describe('Search query string ONLY. Must be a single query. Do NOT append extra metadata. Example: "Python libraries for processing large CSV files efficiently"'),
             num_results: z.number().min(1).max(25).optional().describe('Number of results to return. Default: 10, max: 25.'),
             type: z.enum(['auto', 'neural', 'keyword']).optional().describe('Search mode. "auto" (default): Exa decides best approach. "neural": semantic/meaning-based search, best for natural language queries. "keyword": traditional keyword matching, best for exact terms, error codes, or specific identifiers.'),
             include_text: z.boolean().optional().describe('If true, includes full extracted page text in results. Default: false. Useful when you need the complete content for analysis.'),
@@ -37,12 +39,14 @@ export const exaTools = {
 **When to use:** When you need a concise, definitive answer to a factual question with source citations. Similar to tavily_search's "answer" field but powered by Exa's neural search.
 **Returns:** Object with "answer" (string) and "results" (array of SearchResult sources).
 
+IMPORTANT: The "query" parameter must contain ONLY the question. Do NOT append extra metadata or multiple questions.
+
 **Examples:**
 - Factual: { "query": "What is the maximum context window of Claude 3.5 Sonnet?" }
 - Comparison: { "query": "What are the key differences between PostgreSQL and MySQL?" }
 - Technical: { "query": "What is the time complexity of Dijkstra's algorithm?" }`,
         schema: z.object({
-            query: z.string().describe('Question to answer. Phrase as a clear question for best results. Example: "What are the main features of HTTP/3?"'),
+            query: z.string().describe('Question to answer ONLY. Must be a single question. Do NOT append extra metadata. Example: "What are the main features of HTTP/3?"'),
         }),
         handler: async (args: any, apiKey: string) => {
             const data = await exaAnswer(apiKey, args.query);

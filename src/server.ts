@@ -10,6 +10,7 @@ import { exaTools } from './tools/exa-search.js';
 import { scholarTools } from './tools/scholar-search.js';
 import { arxivTools } from './tools/arxiv-search.js';
 import { usageTools } from './tools/usage-checker.js';
+import { sanitizeStringParam } from './utils/sanitizer.js';
 
 export function createServer(): McpServer {
     const config = loadConfig();
@@ -122,18 +123,26 @@ export function createServer(): McpServer {
         'scholar_paper_details',
         scholarTools.scholar_paper_details.description,
         scholarTools.scholar_paper_details.schema.shape,
-        async (args) => ({
-            content: [{ type: 'text', text: JSON.stringify(await scholarTools.scholar_paper_details.handler(args, scholarApiKey), null, 2) }],
-        })
+        async (args) => {
+            const cleanId = sanitizeStringParam(args.paper_id);
+            console.error(`[mcp-search] scholar_paper_details: raw="${args.paper_id}" clean="${cleanId}"`);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(await scholarTools.scholar_paper_details.handler({ ...args, paper_id: cleanId }, scholarApiKey), null, 2) }],
+            };
+        }
     );
 
     server.tool(
         'scholar_citation_graph',
         scholarTools.scholar_citation_graph.description,
         scholarTools.scholar_citation_graph.schema.shape,
-        async (args) => ({
-            content: [{ type: 'text', text: JSON.stringify(await scholarTools.scholar_citation_graph.handler(args, scholarApiKey), null, 2) }],
-        })
+        async (args) => {
+            const cleanId = sanitizeStringParam(args.paper_id);
+            console.error(`[mcp-search] scholar_citation_graph: raw="${args.paper_id}" clean="${cleanId}"`);
+            return {
+                content: [{ type: 'text', text: JSON.stringify(await scholarTools.scholar_citation_graph.handler({ ...args, paper_id: cleanId }, scholarApiKey), null, 2) }],
+            };
+        }
     );
 
     // ----- arXiv (API 키 불필요) -----
