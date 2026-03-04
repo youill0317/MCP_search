@@ -1,39 +1,41 @@
 # MCP Search Server
 
-5개 검색 서비스를 통합하는 MCP(Model Context Protocol) 서버입니다.
+MCP (Model Context Protocol) server that unifies multiple search providers.
 
-## 서비스 & 도구 (12개)
+## Supported Services and Tools (12)
 
-| 서비스 | 도구 | 비용 |
-|--------|------|------|
-| **Brave Search** | `brave_web_search`, `brave_news_search`, `brave_image_search` | $5 크레딧/월 |
-| **Tavily** | `tavily_search`, `tavily_extract` | 1,000 크레딧/월 |
-| **Exa** | `exa_search`, `exa_answer` | $10 (1회) |
-| **Semantic Scholar** | `scholar_paper_search`, `scholar_paper_details`, `scholar_citation_graph` | 무료 |
-| **arXiv** | `arxiv_search` | 무료 |
-| **유틸리티** | `check_usage` | — |
+| Service | Tools | Cost |
+| --- | --- | --- |
+| Brave Search | `brave_web_search`, `brave_news_search`, `brave_image_search` | Paid |
+| Tavily | `tavily_search`, `tavily_extract` | Paid |
+| Exa | `exa_search`, `exa_answer` | Paid |
+| Semantic Scholar | `scholar_paper_search`, `scholar_paper_details`, `scholar_citation_graph` | Free |
+| arXiv | `arxiv_search` | Free |
+| Utility | `check_usage` | Free |
 
-## 설치
+## Install
 
 ```bash
 npm install
 npm run build
 ```
 
-## 설정
+## Configuration
 
-`.env.example`을 `.env`로 복사하고 API 키를 입력하세요:
+Copy `.env.example` to `.env` and set the API keys you use.
 
 ```bash
 BRAVE_API_KEY=your-key
 TAVILY_API_KEY=your-key
 EXA_API_KEY=your-key
-# SEMANTIC_SCHOLAR_API_KEY=optional-for-higher-rate-limits
+# Optional: SEMANTIC_SCHOLAR_API_KEY=your-key
 ```
 
-> API 키가 없는 서비스는 자동 비활성화됩니다. Semantic Scholar와 arXiv는 키 없이 사용 가능합니다.
+Notes:
+- Services without keys are disabled automatically.
+- Semantic Scholar and arXiv work without API keys.
 
-## 클라이언트 설정
+## Client Setup
 
 ### Claude Desktop (`config.json`)
 
@@ -53,10 +55,20 @@ EXA_API_KEY=your-key
 }
 ```
 
-## 개발
+## check_usage Tool
+
+`check_usage` accepts:
+- `brave`
+- `tavily`
+- `exa`
+- `semantic_scholar`
+- `arxiv`
+- `all` (default)
+
+## Development
 
 ```bash
-npm run dev    # tsx로 개발 모드 실행
-npm run build  # tsup으로 빌드
-npm start      # 빌드된 서버 실행
+npm run dev
+npm run build
+npm start
 ```

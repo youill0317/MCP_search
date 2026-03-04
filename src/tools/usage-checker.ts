@@ -1,5 +1,5 @@
 // ============================================================
-// 사용량 조회 MCP 도구 정의 (1개 도구)
+// Usage checker MCP tool definition (1 tool)
 // ============================================================
 
 import { z } from 'zod';
@@ -13,23 +13,27 @@ export const usageTools = {
 **When to use:** Before making many API calls, to check if credits are running low, or when the user asks about remaining API quota.
 **Supported services:**
 - **Tavily:** Returns real-time usage data via API (used credits, remaining credits, reset date).
-- **Brave:** No API for usage — provides a link to the web dashboard.
-- **Exa:** No API for usage — provides a link to the web dashboard.
+- **Brave:** No API for usage; provides a link to the web dashboard.
+- **Exa:** No API for usage; provides a link to the web dashboard.
 - **Semantic Scholar & arXiv:** Free services with no usage limits (only rate limits apply).
 **Returns:** Array of UsageInfo objects with service name, availability status, and usage details.
 
 **Examples:**
 - Check all services: { "service": "all" } or {}
 - Check Tavily only: { "service": "tavily" }
-- Check Brave only: { "service": "brave" }`,
+- Check Brave only: { "service": "brave" }
+- Check Semantic Scholar only: { "service": "semantic_scholar" }
+- Check arXiv only: { "service": "arxiv" }`,
         schema: z.object({
-            service: z.enum(['brave', 'tavily', 'exa', 'all']).optional().describe('Which service to check. "all" (default) checks every configured service. Use a specific service name to check just one. Example: "tavily"'),
+            service: z
+                .enum(['brave', 'tavily', 'exa', 'semantic_scholar', 'arxiv', 'all'])
+                .optional()
+                .describe('Which service to check. "all" (default) checks every configured service. Use a specific service name to check just one.'),
         }),
         handler: async (args: any, config: { braveApiKey?: string; tavilyApiKey?: string; exaApiKey?: string }) => {
             const service = args.service ?? 'all';
             const results: UsageInfo[] = [];
 
-            // Brave
             if (service === 'all' || service === 'brave') {
                 results.push({
                     service: 'brave',
@@ -40,7 +44,6 @@ export const usageTools = {
                 });
             }
 
-            // Tavily
             if (service === 'all' || service === 'tavily') {
                 if (config.tavilyApiKey) {
                     try {
@@ -71,7 +74,6 @@ export const usageTools = {
                 }
             }
 
-            // Exa
             if (service === 'all' || service === 'exa') {
                 results.push({
                     service: 'exa',
@@ -82,13 +84,15 @@ export const usageTools = {
                 });
             }
 
-            // Semantic Scholar & arXiv: 무료, 사용량 제한 없음
-            if (service === 'all') {
+            if (service === 'all' || service === 'semantic_scholar') {
                 results.push({
                     service: 'semantic_scholar',
                     available: true,
                     message: 'Free service. No usage limits (rate limits apply).',
                 });
+            }
+
+            if (service === 'all' || service === 'arxiv') {
                 results.push({
                     service: 'arxiv',
                     available: true,

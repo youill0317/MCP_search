@@ -1,5 +1,5 @@
 // ============================================================
-// Semantic Scholar MCP 도구 정의 (3개 도구)
+// Semantic Scholar MCP ?꾧뎄 ?뺤쓽 (3媛??꾧뎄)
 // ============================================================
 
 import { z } from 'zod';
@@ -84,7 +84,10 @@ IMPORTANT: The "paper_id" parameter must contain ONLY the identifier string. Do 
             limit: z.number().min(1).max(100).optional().describe('Number of results. Default: 20, max: 100.'),
         }),
         handler: async (args: any, apiKey?: string) => {
-            const data = await scholarCitations(args.paper_id, args.direction, args.limit, apiKey);
+            const [paperData, data] = await Promise.all([
+                scholarPaperDetails(args.paper_id, apiKey),
+                scholarCitations(args.paper_id, args.direction, args.limit, apiKey),
+            ]);
 
             const items = (data?.data ?? []).map((item: any) => {
                 const paper = args.direction === 'citations' ? item.citingPaper : item.citedPaper;
@@ -92,7 +95,7 @@ IMPORTANT: The "paper_id" parameter must contain ONLY the identifier string. Do 
             });
 
             const result: CitationGraphResponse = {
-                paper: { title: args.paper_id, url: '', abstract: '', source: 'semantic_scholar', authors: [] },
+                paper: formatSingleScholarPaper(paperData),
                 items,
                 direction: args.direction,
                 totalCount: data?.total ?? items.length,

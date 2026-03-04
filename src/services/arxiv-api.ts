@@ -1,6 +1,6 @@
 // ============================================================
-// arXiv API 클라이언트
-// arXiv API는 Atom XML을 반환하므로 간이 XML 파서를 사용합니다.
+// arXiv API ?대씪?댁뼵??
+// arXiv API??Atom XML??諛섑솚?섎?濡?媛꾩씠 XML ?뚯꽌瑜??ъ슜?⑸땲??
 // ============================================================
 
 import { checkRateLimit } from '../utils/rate-limiter.js';
@@ -15,12 +15,7 @@ export async function arxivSearch(options: {
 }): Promise<any[]> {
     await checkRateLimit('arxiv');
 
-    let searchQuery = options.query;
-    if (options.category) {
-        searchQuery = `cat:${options.category}+AND+all:${encodeURIComponent(options.query)}`;
-    } else {
-        searchQuery = `all:${encodeURIComponent(options.query)}`;
-    }
+    const searchQuery = buildSearchQuery(options.query, options.category);
 
     const params = new URLSearchParams({
         search_query: searchQuery,
@@ -40,9 +35,16 @@ export async function arxivSearch(options: {
     return parseArxivXml(xml);
 }
 
+function buildSearchQuery(query: string, category?: string): string {
+    if (category) {
+        return `cat:${category} AND all:${query}`;
+    }
+    return `all:${query}`;
+}
+
 /**
- * 간이 arXiv Atom XML 파서.
- * 외부 XML 라이브러리 의존성 없이 기본적인 파싱을 수행합니다.
+ * 媛꾩씠 arXiv Atom XML ?뚯꽌.
+ * ?몃? XML ?쇱씠釉뚮윭由??섏〈???놁씠 湲곕낯?곸씤 ?뚯떛???섑뻾?⑸땲??
  */
 function parseArxivXml(xml: string): any[] {
     const entries: any[] = [];
