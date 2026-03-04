@@ -1,5 +1,44 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 .tmp-test/
+coverage/
+*.tsbuildinfo
+
+# Environment / secrets
 .env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+id_rsa
+id_dsa
+secrets.json
+secrets.yaml
+secrets.yml
+config/secrets.json
+config/secrets.yaml
+config/secrets.yml
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
