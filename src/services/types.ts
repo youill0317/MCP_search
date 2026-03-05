@@ -1,8 +1,3 @@
-// ============================================================
-// 공통 타입 정의 — 모든 검색 서비스의 결과를 통일된 포맷으로 변환
-// ============================================================
-
-/** 웹/뉴스/AI 검색 결과 */
 export interface SearchResult {
     title: string;
     url: string;
@@ -14,7 +9,6 @@ export interface SearchResult {
     rawContent?: string;
 }
 
-/** 학술 논문 검색 결과 */
 export interface PaperResult {
     title: string;
     url: string;
@@ -30,7 +24,6 @@ export interface PaperResult {
     pdfUrl?: string;
 }
 
-/** 이미지 검색 결과 */
 export interface ImageResult {
     title: string;
     url: string;
@@ -40,20 +33,62 @@ export interface ImageResult {
     height?: number;
 }
 
-/** 콘텐츠 추출 결과 */
+export interface VideoResult {
+    title: string;
+    url: string;
+    content: string;
+    source: 'brave';
+    thumbnailUrl?: string;
+    publishedDate?: string;
+    duration?: string;
+    creator?: string;
+}
+
 export interface ExtractResult {
     url: string;
     rawContent: string;
     extractedAt: string;
 }
 
-/** 답변 포함 검색 결과 */
-export interface AnswerResponse {
-    answer: string;
-    results: SearchResult[];
+export interface CrawlResult {
+    url: string;
+    title?: string;
+    rawContent: string;
+    source: 'tavily';
+    extractedAt: string;
 }
 
-/** 논문 인용 그래프 */
+export interface MapResult {
+    rootUrl: string;
+    urls: string[];
+    source: 'tavily';
+}
+
+export interface AuthorResult {
+    authorId: string;
+    name: string;
+    source: 'semantic_scholar';
+    url?: string;
+    affiliations?: string[];
+    paperCount?: number;
+    citationCount?: number;
+    hIndex?: number;
+    homepage?: string;
+}
+
+export interface ScholarMatchResult {
+    matched: boolean;
+    paper?: PaperResult;
+}
+
+export interface PagedResponse<T> {
+    data: T[];
+    total?: number;
+    offset?: number;
+    next?: number;
+    token?: string;
+}
+
 export interface CitationGraphResponse {
     paper: PaperResult;
     items: PaperResult[];
@@ -61,7 +96,6 @@ export interface CitationGraphResponse {
     totalCount: number;
 }
 
-/** API 사용량 정보 */
 export interface UsageInfo {
     service: string;
     available: boolean;

@@ -1,31 +1,44 @@
-// ============================================================
-// Tavily MCP 도구 정의 (2개 도구)
-// ============================================================
-
 import { z } from 'zod';
-import { tavilySearch, tavilyExtract } from '../services/tavily-api.js';
-import { formatTavilySearchResults } from '../utils/formatter.js';
+import {
+    tavilyCrawl,
+    tavilyExtract,
+    tavilyImageSearch,
+    tavilyMap,
+    tavilySearch,
+} from '../services/tavily-api.js';
+import {
+    formatTavilyCrawlResults,
+    formatTavilyExtractResults,
+    formatTavilyImageResults,
+    formatTavilyMapResults,
+    formatTavilySearchResults,
+} from '../utils/formatter.js';
+
+const searchDepthSchema = z.enum(['basic', 'advanced']).optional();
+const timeRangeSchema = z.enum(['day', 'week', 'month', 'year']).optional();
 
 export const tavilyTools = {
     tavily_search: {
-        description: `AI-optimized search using Tavily. Designed specifically for LLM/RAG pipelines. Returns concise, fact-based answers with cited sources.
+        description: `Search the web via Tavily and return titles, URLs, and content.
 
-**When to use:** Factual verification, getting concise AI-ready content, RAG retrieval, when you need an AI-generated answer along with supporting sources.
-**Strengths:** Returns a direct "answer" field with a synthesized response, relevance-scored results, optional raw content extraction.
-**Returns:** Object with optional "answer" (string) and "results" (array of SearchResult with score 0-1).
-
-IMPORTANT: Each parameter must contain ONLY its own value. Do NOT combine multiple fields into one parameter.
-
-**Examples:**
-- Factual question: { "query": "What is the current population of South Korea?" }
-- Deep research: { "query": "advantages of Rust over C++", "search_depth": "advanced" }
-- With full content: { "query": "how does BERT tokenization work", "include_raw_content": true, "max_results": 5 }
-- Quick lookup: { "query": "Python 3.13 new features", "max_results": 3 }`,
+- **query**: Search keywords.
+- **search_depth**: "basic" (fast, default) or "advanced" (thorough, slower).
+- **include_raw_content**: Set true to include full page text in results.
+- **max_results**: Number of results (1–20, default 10).
+- **include_domains / exclude_domains**: Arrays of domain strings to filter (e.g. ["arxiv.org"]).
+- **topic**: "general" (default) or "news".
+- **days**: Limit results to the past N days (1–365).
+- **time_range**: "day", "week", "month", or "year".`,
         schema: z.object({
-            query: z.string().describe('Search query string ONLY. Must be a single query. Do NOT append extra metadata. Example: "What are the benefits of microservices architecture?"'),
-            search_depth: z.enum(['basic', 'advanced']).optional().describe('Search depth. "basic" (default, 1 credit): fast, good for simple queries. "advanced" (2 credits): more thorough, better for complex or nuanced topics.'),
-            include_raw_content: z.boolean().optional().describe('If true, includes full raw page content in results. Default: false. Use sparingly as it increases response size significantly.'),
-            max_results: z.number().min(1).max(20).optional().describe('Number of results to return. Default: 10. Use 3-5 for focused queries, 10-20 for comprehensive research.'),
+            query: z.string(),
+            search_depth: searchDepthSchema,
+            include_raw_content: z.boolean().optional(),
+            max_results: z.number().min(1).max(20).optional(),
+            include_domains: z.array(z.string()).max(20).optional(),
+            exclude_domains: z.array(z.string()).max(20).optional(),
+            topic: z.enum(['general', 'news']).optional(),
+            days: z.number().min(1).max(365).optional(),
+            time_range: timeRangeSchema,
         }),
         handler: async (args: any, apiKey: string) => {
             const data = await tavilySearch(apiKey, args);
@@ -34,28 +47,91 @@ IMPORTANT: Each parameter must contain ONLY its own value. Do NOT combine multip
     },
 
     tavily_extract: {
-        description: `Extract clean, readable text content from web page URLs using Tavily. Strips HTML and returns structured text.
+        description: `Extract clean, readable text content from given URLs via Tavily.
 
-**When to use:** Reading full article content from a URL, extracting text from pages found via search, getting clean content for analysis or summarization.
-**Strengths:** Handles JavaScript-rendered pages, removes ads/navigation, returns clean text.
-**Returns:** Array of ExtractResult objects with url, rawContent, extractedAt.
-
-IMPORTANT: The "urls" parameter must be a JSON array of URL strings. Each URL must be a valid HTTP/HTTPS URL and nothing else.
-
-**Examples:**
-- Single URL: { "urls": ["https://example.com/article"] }
-- Multiple URLs: { "urls": ["https://blog.example.com/post1", "https://news.example.com/story2"] }`,
+- **urls**: Array of full URLs to extract (1–20). Must be valid URLs starting with http(s)://.`,
         schema: z.object({
-            urls: z.array(z.string().url()).min(1).max(5).describe('Array of URLs to extract content from. Each element must be a valid HTTP/HTTPS URL string ONLY. Maximum 5 URLs per request. Example: ["https://example.com/article"]'),
+            urls: z.array(z.string().url()).min(1).max(20),
         }),
         handler: async (args: any, apiKey: string) => {
             const data = await tavilyExtract(apiKey, args.urls);
-            const results = (data?.results ?? []).map((r: any) => ({
-                url: r.url ?? '',
-                rawContent: r.raw_content ?? '',
-                extractedAt: new Date().toISOString(),
-            }));
-            return results;
+            return formatTavilyExtractResults(data);
+        },
+    },
+
+    tavily_crawl: {
+        description: `Crawl a website starting from a root URL and extract content from discovered pages.
+
+- **url**: Starting URL to crawl. Must be a valid URL.
+- **max_depth**: How many link levels deep to crawl (1–10).
+- **max_breadth**: Max pages per level (1–100).
+- **limit**: Total page limit (1–200).
+- **instructions**: Natural-language instructions to guide which content to extract.
+- **select_paths / exclude_paths**: URL path patterns to include or exclude (e.g. ["/blog/*"]).
+- **allow_external**: Set true to follow links to other domains.`,
+        schema: z.object({
+            url: z.string().url(),
+            max_depth: z.number().min(1).max(10).optional(),
+            max_breadth: z.number().min(1).max(100).optional(),
+            limit: z.number().min(1).max(200).optional(),
+            instructions: z.string().optional(),
+            select_paths: z.array(z.string()).max(100).optional(),
+            exclude_paths: z.array(z.string()).max(100).optional(),
+            allow_external: z.boolean().optional(),
+        }),
+        handler: async (args: any, apiKey: string) => {
+            const data = await tavilyCrawl(apiKey, args);
+            return formatTavilyCrawlResults(data);
+        },
+    },
+
+    tavily_map: {
+        description: `Map a website's structure and return all discovered URLs without extracting content.
+
+- **url**: Root URL to map. Must be a valid URL.
+- **max_depth**: How many link levels deep to map (1–10).
+- **max_breadth**: Max links per level (1–100).
+- **max_results**: Total URL limit (1–200).
+- **select_paths / exclude_paths**: URL path patterns to include or exclude.
+- **allow_external**: Set true to include links to other domains.`,
+        schema: z.object({
+            url: z.string().url(),
+            max_depth: z.number().min(1).max(10).optional(),
+            max_breadth: z.number().min(1).max(100).optional(),
+            max_results: z.number().min(1).max(200).optional(),
+            select_paths: z.array(z.string()).max(100).optional(),
+            exclude_paths: z.array(z.string()).max(100).optional(),
+            allow_external: z.boolean().optional(),
+        }),
+        handler: async (args: any, apiKey: string) => {
+            const data = await tavilyMap(apiKey, args);
+            return formatTavilyMapResults(data, args.url);
+        },
+    },
+
+    tavily_image_search: {
+        description: `Search for images via Tavily.
+
+- **query**: Image search keywords.
+- **search_depth**: "basic" (default) or "advanced".
+- **max_results**: Number of results (1–20, default 10).
+- **include_domains / exclude_domains**: Domain filter arrays.
+- **topic**: "general" (default) or "news".
+- **days**: Limit to past N days (1–365).
+- **time_range**: "day", "week", "month", or "year".`,
+        schema: z.object({
+            query: z.string(),
+            search_depth: searchDepthSchema,
+            max_results: z.number().min(1).max(20).optional(),
+            include_domains: z.array(z.string()).max(20).optional(),
+            exclude_domains: z.array(z.string()).max(20).optional(),
+            topic: z.enum(['general', 'news']).optional(),
+            days: z.number().min(1).max(365).optional(),
+            time_range: timeRangeSchema,
+        }),
+        handler: async (args: any, apiKey: string) => {
+            const data = await tavilyImageSearch(apiKey, args);
+            return formatTavilyImageResults(data);
         },
     },
 };

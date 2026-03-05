@@ -1,10 +1,8 @@
-// ============================================================
-// Brave Search API 클라이언트
-// ============================================================
-
 import { checkRateLimit } from '../utils/rate-limiter.js';
 
 const BRAVE_BASE_URL = 'https://api.search.brave.com/res/v1';
+
+type QueryParamValue = string | number | boolean | Array<string | number> | undefined;
 
 interface BraveSearchOptions {
     query: string;
@@ -13,15 +11,32 @@ interface BraveSearchOptions {
     freshness?: string;
 }
 
-async function braveRequest(endpoint: string, params: Record<string, string>, apiKey: string): Promise<any> {
+function setQueryParams(url: URL, params: Record<string, QueryParamValue>): void {
+    for (const [key, value] of Object.entries(params)) {
+        if (value === undefined) continue;
+
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                if (item !== undefined && item !== null && String(item).length > 0) {
+                    url.searchParams.append(key, String(item));
+                }
+            }
+            continue;
+        }
+
+        url.searchParams.set(key, String(value));
+    }
+}
+
+async function braveRequest(endpoint: string, params: Record<string, QueryParamValue>, apiKey: string): Promise<any> {
     await checkRateLimit('brave');
 
     const url = new URL(`${BRAVE_BASE_URL}/${endpoint}`);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    setQueryParams(url, params);
 
     const response = await fetch(url.toString(), {
         headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Accept-Encoding': 'gzip',
             'X-Subscription-Token': apiKey,
         },
@@ -36,25 +51,50 @@ async function braveRequest(endpoint: string, params: Record<string, string>, ap
 }
 
 export async function braveWebSearch(apiKey: string, options: BraveSearchOptions): Promise<any> {
-    const params: Record<string, string> = { q: options.query };
-    if (options.count) params.count = String(options.count);
-    if (options.country) params.country = options.country;
-    if (options.freshness) params.freshness = options.freshness;
-
-    return braveRequest('web/search', params, apiKey);
+    return braveRequest(
+        'web/search',
+        {
+            q: options.query,
+            count: options.count,
+            country: options.country,
+            freshness: options.freshness,
+        },
+        apiKey
+    );
 }
 
 export async function braveNewsSearch(apiKey: string, options: BraveSearchOptions): Promise<any> {
-    const params: Record<string, string> = { q: options.query };
-    if (options.count) params.count = String(options.count);
-    if (options.freshness) params.freshness = options.freshness;
-
-    return braveRequest('news/search', params, apiKey);
+    return braveRequest(
+        'news/search',
+        {
+            q: options.query,
+            count: options.count,
+            freshness: options.freshness,
+        },
+        apiKey
+    );
 }
 
 export async function braveImageSearch(apiKey: string, options: { query: string; count?: number }): Promise<any> {
-    const params: Record<string, string> = { q: options.query };
-    if (options.count) params.count = String(options.count);
+    return braveRequest(
+        'images/search',
+        {
+            q: options.query,
+            count: options.count,
+        },
+        apiKey
+    );
+}
 
-    return braveRequest('images/search', params, apiKey);
+export async function braveVideoSearch(apiKey: string, options: BraveSearchOptions): Promise<any> {
+    return braveRequest(
+        'videos/search',
+        {
+            q: options.query,
+            count: options.count,
+            country: options.country,
+            freshness: options.freshness,
+        },
+        apiKey
+    );
 }

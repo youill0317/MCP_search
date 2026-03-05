@@ -10,20 +10,7 @@ export const usageTools = {
     check_usage: {
         description: `Check API usage and remaining credits for configured search services.
 
-**When to use:** Before making many API calls, to check if credits are running low, or when the user asks about remaining API quota.
-**Supported services:**
-- **Tavily:** Returns real-time usage data via API (used credits, remaining credits, reset date).
-- **Brave:** No API for usage; provides a link to the web dashboard.
-- **Exa:** No API for usage; provides a link to the web dashboard.
-- **Semantic Scholar & arXiv:** Free services with no usage limits (only rate limits apply).
-**Returns:** Array of UsageInfo objects with service name, availability status, and usage details.
-
-**Examples:**
-- Check all services: { "service": "all" } or {}
-- Check Tavily only: { "service": "tavily" }
-- Check Brave only: { "service": "brave" }
-- Check Semantic Scholar only: { "service": "semantic_scholar" }
-- Check arXiv only: { "service": "arxiv" }`,
+- **service**: Which service to check — "brave", "tavily", "exa", "semantic_scholar", "arxiv", or "all" (default). Tavily returns real-time usage data. Brave/Exa provide dashboard links. Semantic Scholar and arXiv are free (rate limits only).`,
         schema: z.object({
             service: z
                 .enum(['brave', 'tavily', 'exa', 'semantic_scholar', 'arxiv', 'all'])

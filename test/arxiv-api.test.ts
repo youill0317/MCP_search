@@ -11,6 +11,8 @@ function toUrlString(input: RequestInfo | URL): string {
 export async function runArxivApiTests(): Promise<void> {
     await testAvoidsDoubleEncoding();
     await testCategoryQueryEncoding();
+    await testRawQuery();
+    await testIdList();
 }
 
 async function testAvoidsDoubleEncoding(): Promise<void> {
@@ -62,4 +64,48 @@ async function testCategoryQueryEncoding(): Promise<void> {
     assert.equal(url.searchParams.get('search_query'), 'cat:cs.AI AND all:deep learning');
 }
 
+async function testRawQuery(): Promise<void> {
+    __resetRateLimiterForTests();
+    const originalFetch = globalThis.fetch;
 
+    let requestedUrl = '';
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+        requestedUrl = toUrlString(input);
+        return new Response('<feed xmlns="http://www.w3.org/2005/Atom"></feed>', {
+            status: 200,
+            headers: { 'Content-Type': 'application/atom+xml' },
+        });
+    }) as typeof fetch;
+
+    try {
+        await arxivSearch({ raw_query: 'au:Goodfellow AND cat:cs.LG' });
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+
+    const url = new URL(requestedUrl);
+    assert.equal(url.searchParams.get('search_query'), 'au:Goodfellow AND cat:cs.LG');
+}
+
+async function testIdList(): Promise<void> {
+    __resetRateLimiterForTests();
+    const originalFetch = globalThis.fetch;
+
+    let requestedUrl = '';
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+        requestedUrl = toUrlString(input);
+        return new Response('<feed xmlns="http://www.w3.org/2005/Atom"></feed>', {
+            status: 200,
+            headers: { 'Content-Type': 'application/atom+xml' },
+        });
+    }) as typeof fetch;
+
+    try {
+        await arxivSearch({ id_list: ['1706.03762', '1810.04805'] });
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+
+    const url = new URL(requestedUrl);
+    assert.equal(url.searchParams.get('id_list'), '1706.03762,1810.04805');
+}
