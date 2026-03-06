@@ -28,7 +28,7 @@ npm run build
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set the API keys you use.
+Set API keys in the process environment before startup (or pass them via client JSON `env`).
 
 ```bash
 BRAVE_API_KEY=your-key
@@ -43,18 +43,21 @@ Notes:
 
 ## Client Setup
 
-### Claude Desktop (`config.json`)
+### Claude Code (client JSON)
 
 ```json
 {
   "mcpServers": {
-    "search": {
+    "mcp_search": {
       "command": "node",
-      "args": ["C:/path/to/MCP_search/dist/index.js"],
+      "args": [
+        "C:/path/to/MCP/MCP_search/dist/index.js"
+      ],
       "env": {
         "BRAVE_API_KEY": "your-key",
         "TAVILY_API_KEY": "your-key",
-        "EXA_API_KEY": "your-key"
+        "EXA_API_KEY": "your-key",
+        "SEMANTIC_SCHOLAR_API_KEY": ""
       }
     }
   }
